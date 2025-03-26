@@ -7,24 +7,6 @@ provider "aws" {
     region     = var.aws_region
 }
 
-# variables
-
-variable "aws_access_key" {} // you can define your credentials here or in a separate tfvars file
-variable "aws_secret_key" {}
-variable "aws_region" {}
-
-variable "cidr_prefix" {    default = "10.255"  }
-variable "lb_port" {    default = 80  }
-variable "lb_protocol" {    default = "HTTP"  }
-variable "Web_server_port" {    default = 80  }
-variable "Web_server_protocol" {    default = "HTTP"  }
-variable "db_port" {    default = 3306  }
-variable "container_image" {    default = "public.ecr.aws/ubuntu/apache2:latest"  }
-variable "container_command" {    default = ["apachectl", "-D", "FOREGROUND"]  }
-variable "ecs_desired_task_count" {    default = 3  }
-variable "db_username" {    default = "test"  }
-variable "db_password" {    default = "test1234"  }
-
 # data
 
 data "aws_region" "current" {}
@@ -292,16 +274,4 @@ resource "aws_rds_cluster" "archesys-web-app-db" {
     master_username           = var.db_username
     master_password           = var.db_password
     skip_final_snapshot       = true
-}
-
-output "ALB_DNS" {
-  value = aws_lb.archesys-web-app-lb.dns_name
-}
-
-output "DB_Write_DNS" {
-  value = aws_rds_cluster.archesys-web-app-db.endpoint
-}
-
-output "DB_Read_DNS" {
-  value = aws_rds_cluster.archesys-web-app-db.reader_endpoint
 }
