@@ -1,12 +1,18 @@
 
+variable "aws_session_token" {
+  description = "aws session token"
+  default     = ""
+  type        = string
+}
+
 variable "aws_access_key" {
-  description = "supernet prefix"
+  description = "aws access key"
   default     = ""
   type        = string
 }
 
 variable "aws_secret_key" {
-  description = "supernet prefix"
+  description = "aws secret key"
   default     = ""
   type        = string
 }
@@ -31,7 +37,7 @@ variable "lb_port" {
 
 variable "lb_protocol" {
   description = "load balancer protocol e.g.- HTTP/HTTPS"
-  default     = "10.HTTP"
+  default     = "HTTP"
   type        = string
 }
 
@@ -43,7 +49,7 @@ variable "Web_server_port" {
 
 variable "Web_server_protocol" {
   description = "web server protocol e.g.- HTTP/HTTPS"
-  default     = "10.HTTP"
+  default     = "HTTP"
   type        = string
 }
 
