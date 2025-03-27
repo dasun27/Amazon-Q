@@ -1,4 +1,4 @@
-# Amazon Q usage with Terraform
+# Terraform module for a web service (ECS/ALB/RDS)
 
 ## Overview
 
