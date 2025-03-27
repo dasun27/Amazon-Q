@@ -6,16 +6,31 @@ This is an attempt to test how we can use Amazon Q to improve developer producti
 
 ## Features
 
-- TBD
-- TBD
+- ECS based web service
+- ALB frontend for access from the Internet
+- RDS Backend
+- Nat GW for ECS tasks to reach Internet
+- Public subnets for ALb & private subnets for ECS/DB
 
 ---
 
-## TBD
+## Test Output
 
-### TBD
+### Test 1
 
-```hcl
+```
+resource "random_string" "random_name" {
+  length  = 5
+  special = false
+  upper   = false
+  lower   = true
+}
+
+```
+
+### Test 2
+
+```
 resource "random_string" "random_name" {
   length  = 5
   special = false
@@ -27,41 +42,18 @@ resource "random_string" "random_name" {
 
 ---
 
-## TBD
+## Results
 
-### TBD
-
-TBD:
-
-### TBD
-
-1. **TBD**
-
-   ```bash
-   terraform init
-   ```
-
-2. **Plan the Deployment**
-
-   ```bash
-   terraform plan
-   ```
-
----
-
-## TBD
-
-| Name                        | Description                             |
+| TBD                        | TBD                             |
 | --------------------------- | --------------------------------------- |
-| `ecs_cluster_arn`           | ARN of the ECS cluster.                 |
-| `ecs_cluster_id`            | ID of the ECS cluster.                  |
+| `TBD`           | TBD                 |
+| `TBD`            | TBD                 |
 
 
 ---
 
 ## Notes
-- **Important:** TBD
-- **Security**: TBD
+- **TBD:** TBD
 
 ---
 
