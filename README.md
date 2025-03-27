@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is an attempt to test how we can use Amazon Q to improve developer productivity for building Terraform modules.
+This is a Terraform module that deploys a web service on ECS with an ALB front end and an RDS backend.
 
 ## Features
 
@@ -14,38 +14,27 @@ This is an attempt to test how we can use Amazon Q to improve developer producti
 
 ---
 
-## Test Output
+## Deployment
 
-### Test 1
-
-```
-resource "random_string" "random_name" {
-  length  = 5
-  special = false
-  upper   = false
-  lower   = true
-}
+### Step 1
 
 ```
+step 1
+```
 
-### Test 2
+### Step 2
 
 ```
-resource "random_string" "random_name" {
-  length  = 5
-  special = false
-  upper   = false
-  lower   = true
-}
+step 2
 
 ```
 
 ---
 
-## Results
+## Summary
 
 | TBD                        | TBD                             |
-| --------------------------- | --------------------------------------- |
+| -------------------------- | --------------------------------|
 | `TBD`           | TBD                 |
 | `TBD`            | TBD                 |
 
