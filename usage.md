@@ -580,9 +580,9 @@ High: 1 issue
 Medium: 1 issue
 Low: 0 issues
 Info: 0 issues
-
-![](screenshots/CWE-703-explanation-n-fix.png)
 ```
+![](screenshots/CWE-703-explanation-n-fix.png)
+
 
 ### Generate test (```/test "aws_ecs_task_definition"```)
 
