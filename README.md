@@ -1,630 +1,147 @@
-# Amazon Q usage with Terraform
+# AWS Infrastructure as Code for Secure Web Application Deployment
 
-## Overview
+This Terraform project automates the deployment of a highly available, secure web application infrastructure on AWS. It provisions a complete environment with load balancing, containerized applications, and managed database services while implementing security best practices and comprehensive monitoring.
 
-This is an attempt to test how we can use Amazon Q to improve developer productivity for building Terraform modules.
+The infrastructure includes a multi-AZ VPC setup with public, private, and database subnets, an Application Load Balancer with SSL/TLS termination, an ECS Fargate cluster for container workloads, and an Amazon RDS cluster for database operations. The architecture implements defense-in-depth security through network segmentation, security groups, and SSL/TLS encryption, while CloudWatch monitoring ensures operational visibility.
 
-## Features
-
-- ECS based web service
-- ALB frontend for access from the Internet
-- RDS Backend
-- Nat GW for ECS tasks to reach Internet
-- Public subnets for ALb & private subnets for ECS/DB
-
----
-
-## Test Output
-
-### Explain this code (main.tf) in detail
-
-
+## Repository Structure
 ```
-I'll break down this Terraform configuration file that sets up a comprehensive AWS infrastructure. Here's a detailed explanation:
-
-Provider Configuration:
-
-Sets up AWS provider with access credentials and region
-
-Uses variables for sensitive information like access keys
-
-Network Infrastructure:
-
-Creates a VPC with DNS support enabled
-
-Sets up 3 tiers of subnets across 3 availability zones:
-
-Public subnets (for internet-facing resources)
-
-Private subnets (for application components)
-
-DB subnets (for database resources)
-
-Implements networking components:
-
-Internet Gateway for public internet access
-
-NAT Gateway for private subnet internet access
-
-Route tables for traffic management
-
-Load Balancer Configuration:
-
-Creates an Application Load Balancer (ALB)
-
-Sets up target group with health checks
-
-Configures listener for routing traffic
-
-Defines security groups for ALB access
-
-Security Groups:
-
-archesys-web-alb-sg: For the load balancer
-
-archesys-web-app-sg: For the application (ECS tasks)
-
-archesys-web-db-sg: For the database
-
-ECS (Elastic Container Service) Setup:
-
-Creates an ECS cluster
-
-Defines task definition for Fargate:
-
-512 CPU units
-
-1024MB memory
-
-Linux-based container
-
-Sets up ECS service:
-
-Fargate launch type
-
-Load balancer integration
-
-Network configuration in private subnets
-
-Database Configuration:
-
-Creates an RDS Aurora MySQL cluster
-
-Sets up DB subnet group
-
-Configures security and networking
-
-Key Features:
-
-Highly available (spans 3 AZs)
-
-Secure architecture (layered networking)
-
-Container-based application deployment
-
-Managed database service
-
-Load balanced for scalability
-
-The infrastructure follows AWS best practices with:
-
-Separation of concerns (public/private/database tiers)
-
-Proper security group configurations
-
-Managed services usage (RDS, ECS, ALB)
-
-Network isolation for sensitive components
-
-This setup is suitable for running a containerized web application with database backend in a production environment.
-
+.
+├── main.tf                 # Core infrastructure definition (VPC, ECS, RDS)
+├── alb.tf                  # Application Load Balancer configuration and security groups
+├── ssl.tf                  # SSL/TLS certificate and DNS configuration
+├── monitoring.tf          # CloudWatch alarms and metrics configuration
+├── variables.tf           # Input variables and default values
+├── output.tf             # Output definitions for resource attributes
+└── .gitignore            # Git ignore patterns for Terraform files
 ```
 
-### How is traffic routed between the public and private subnets in this setup? <-- Q suggested this question as a follow up to the previous question
+## Usage Instructions
+### Prerequisites
+- AWS CLI installed and configured
+- Terraform v0.12.0 or later
+- Valid AWS credentials with appropriate permissions
+- Registered domain name (for SSL/TLS setup)
+- Docker image available in Amazon ECR or public registry
 
+### Installation
 
-```
-In this setup, traffic routing between public and private subnets is handled through a combination of Internet Gateway (IGW) and NAT Gateway. Here's the detailed traffic flow: [1]
-
-Public Subnet Traffic (Inbound/Outbound): [2]
-
-resource "aws_route_table" "pub_rt" {
-    vpc_id = aws_vpc.archesys-web-app-vpc.id
-    
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = aws_internet_gateway.igw.id
-    }
-}
-
-Copy
-
-Insert at cursor
-hcl
-Public subnets have a route table that directs internet-bound traffic (0.0.0.0/0) to the Internet Gateway
-
-The Application Load Balancer sits in public subnets and can receive traffic directly from the internet
-
-Resources in public subnets can directly communicate with the internet
-
-Private Subnet Traffic (Outbound):
-
-resource "aws_route_table" "pri_rt" {
-    vpc_id = aws_vpc.archesys-web-app-vpc.id
-    
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = aws_nat_gateway.nat_gateway.id
-    }
-}
-
-Copy
-
-Insert at cursor
-hcl
-Private subnets route their internet-bound traffic through the NAT Gateway
-
-The NAT Gateway is placed in the public subnet (specifically public_subnets0)
-
-Traffic flow: Private Instance → NAT Gateway → Internet Gateway → Internet
-
-This allows ECS tasks in private subnets to access the internet (e.g., pulling container images) while remaining secure from direct internet access
-
-Database Subnet Traffic:
-
-resource "aws_route_table" "db_rt" {
-    vpc_id = aws_vpc.archesys-web-app-vpc.id
-}
-
-Copy
-
-Insert at cursor
-hcl
-Database subnets have no route to the internet
-
-They can only communicate within the VPC through the security group rules
-
-The database security group only allows incoming traffic from the application security group
-
-The overall traffic flow for a typical web request would be:
-
-Internet → Internet Gateway → Load Balancer (in public subnet)
-
-Load Balancer → ECS Tasks (in private subnet)
-
-ECS Tasks → RDS Database (in database subnet)
-
-This architecture ensures that:
-
-Only the load balancer is exposed to the internet
-
-Application containers can access the internet for updates but can't be accessed directly
-
-Database is completely isolated from internet access
-
+1. Clone the repository and navigate to the project directory:
+```bash
+git clone <repository-url>
+cd <project-directory>
 ```
 
-### can you optmize this code for security
-
-
+2. Initialize Terraform:
+```bash
+terraform init
 ```
-Here's a security-optimized version of the code with best practices for AWS infrastructure security:
 
-Enhanced VPC Configuration:
+3. Configure required variables by creating a `terraform.tfvars` file:
+```hcl
+aws_region = "us-east-1"
+domain_name = "yourdomain.com"
+db_username = "admin"
+db_password = "your-secure-password"
+container_image = "your-container-image:tag"
+```
 
-resource "aws_vpc" "main" {
-    cidr_block           = format("%s%s", var.cidr_prefix, ".0.0/16")
-    enable_dns_support   = true
-    enable_dns_hostnames = true
-    
-    # Enable VPC flow logs for network monitoring
-    enable_flow_log = true
-    
-    tags = merge(local.common_tags, {
-        Name = "${local.prefix}-vpc"
-    })
-}
+4. Review the execution plan:
+```bash
+terraform plan
+```
 
-# VPC Flow Logs
-resource "aws_flow_log" "vpc_flow_log" {
-    vpc_id          = aws_vpc.main.id
-    traffic_type    = "ALL"
-    iam_role_arn    = aws_iam_role.vpc_flow_log_role.arn
-    log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
-}
+5. Apply the configuration:
+```bash
+terraform validate
+terraform apply
+```
 
-Copy
+### Quick Start
+1. Deploy the basic infrastructure:
+```bash
+terraform apply -var-file="prod.tfvars" -target=aws_vpc.archesys-web-app-vpc
+```
 
-Insert at cursor
-hcl
-Improved Security Group Rules:
+2. Configure DNS settings:
+```bash
+terraform apply -var-file="prod.tfvars" -target=aws_route53_record.alb
+```
 
-locals {
-    security_group_rules = {
-        alb = {
-            ingress = [
-                {
-                    from_port   = var.lb_port
-                    to_port     = var.lb_port
-                    protocol    = "tcp"
-                    cidr_blocks = var.allowed_cidr_blocks # Restrict to specific IPs
-                    description = "ALB ingress"
-                }
-            ]
-            egress = [
-                {
-                    from_port       = var.Web_server_port
-                    to_port         = var.Web_server_port
-                    protocol        = "tcp"
-                    security_groups = [aws_security_group.app.id]
-                    description     = "To application"
-                }
-            ]
-        }
-        app = {
-            ingress = [
-                {
-                    from_port       = var.Web_server_port
-                    to_port         = var.Web_server_port
-                    protocol        = "tcp"
-                    security_groups = [aws_security_group.alb.id]
-                    description     = "From ALB"
-                }
-            ]
-            egress = [
-                {
-                    from_port       = var.db_port
-                    to_port         = var.db_port
-                    protocol        = "tcp"
-                    security_groups = [aws_security_group.db.id]
-                    description     = "To database"
-                }
-            ]
-        }
-    }
-}
+3. Deploy the application:
+```bash
+terraform apply -var-file="prod.tfvars"
+```
 
-Copy
-
-Insert at cursor
-hcl
-Enhanced RDS Configuration:
-
-resource "aws_rds_cluster" "main" {
-    cluster_identifier     = "${local.prefix}-db"
-    engine                = "mysql"
-    engine_version        = var.db_engine_version
-    db_subnet_group_name  = aws_db_subnet_group.main.name
-    
-    # Enhanced security settings
-    storage_encrypted     = true
-    kms_key_id           = aws_kms_key.rds.arn
-    deletion_protection  = true
-    
-    # Authentication
-    iam_database_authentication_enabled = true
-    master_username      = var.db_username
-    master_password      = var.db_password
-    
-    # Backup configuration
-    backup_retention_period = 7
-    preferred_backup_window = "03:00-04:00"
-    
-    vpc_security_group_ids = [aws_security_group.db.id]
-}
-
-# KMS key for RDS encryption
-resource "aws_kms_key" "rds" {
-    description = "KMS key for RDS cluster encryption"
-    enable_key_rotation = true
-    
-    policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-            {
-                Sid    = "Enable IAM User Permissions"
-                Effect = "Allow"
-                Principal = {
-                    AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-                }
-                Action   = "kms:*"
-                Resource = "*"
-            }
-        ]
-    })
-}
-
-Copy
-
-Insert at cursor
-hcl
-Secure ECS Task Definition:
-
-resource "aws_ecs_task_definition" "app" {
-    family                   = "${local.prefix}-app"
-    network_mode             = "awsvpc"
-    requires_compatibilities = ["FARGATE"]
-    cpu                      = 512
-    memory                   = 1024
-    execution_role_arn      = aws_iam_role.ecs_execution.arn
-    task_role_arn          = aws_iam_role.ecs_task.arn
-
-    container_definitions = jsonencode([
-        {
-            name      = "${local.prefix}-container"
-            image     = var.container_image
-            essential = true
-            
-            # Enable container insights
-            logConfiguration = {
-                logDriver = "awslogs"
-                options = {
-                    "awslogs-group"         = aws_cloudwatch_log_group.app.name
-                    "awslogs-region"        = data.aws_region.current.name
-                    "awslogs-stream-prefix" = "ecs"
-                }
-            }
-            
-            # Security settings
-            readonlyRootFilesystem = true
-            privileged             = false
-            
-            # Resource limits
-            ulimits = [
-                {
-                    name      = "nofile"
-                    softLimit = 65536
-                    hardLimit = 65536
-                }
-            ]
-        }
-    ])
-}
-
-Copy
-
-Insert at cursor
-hcl
-WAF Integration for ALB:
-
-resource "aws_wafv2_web_acl" "main" {
-    name        = "${local.prefix}-waf"
-    description = "WAF for ALB"
-    scope       = "REGIONAL"
-
-    default_action {
-        allow {}
-    }
-
-    rule {
-        name     = "AWSManagedRulesCommonRuleSet"
-        priority = 1
-
-        override_action {
-            none {}
-        }
-
-        statement {
-            managed_rule_group_statement {
-                name        = "AWSManagedRulesCommonRuleSet"
-                vendor_name = "AWS"
-            }
-        }
-
-        visibility_config {
-            cloudwatch_metrics_enabled = true
-            metric_name               = "AWSManagedRulesCommonRuleSetMetric"
-            sampled_requests_enabled  = true
-        }
-    }
-}
-
-resource "aws_wafv2_web_acl_association" "main" {
-    resource_arn = aws_lb.main.arn
-    web_acl_arn  = aws_wafv2_web_acl.main.arn
-}
-
-Copy
-
-Insert at cursor
-hcl
-SSL/TLS Configuration for ALB:
-
-resource "aws_lb_listener" "https" {
-    load_balancer_arn = aws_lb.main.arn
-    port              = "443"
-    protocol          = "HTTPS"
-    ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
-    certificate_arn   = var.certificate_arn
-
-    default_action {
-        type             = "forward"
-        target_group_arn = aws_lb_target_group.main.arn
-    }
+### More Detailed Examples
+1. Customizing the VPC CIDR:
+```hcl
+module "vpc" {
+  cidr_prefix = "172.16"
 }
 ```
 
-### How to add ssl termination to this
-
-```
-I'll show you how to add SSL termination to your existing ALB configuration. Here's how to modify your current code to implement SSL termination:
-
-First, add ACM Certificate:
-
-resource "aws_acm_certificate" "app_cert" {
-  domain_name               = var.domain_name
-  validation_method         = "DNS"
-  subject_alternative_names = ["*.${var.domain_name}"]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = {
-    Name = "${local.prefix}-cert"
-  }
-}
-
-resource "aws_acm_certificate_validation" "cert_validation" {
-  certificate_arn = aws_acm_certificate.app_cert.arn
-}
-
-Copy
-
-Insert at cursor
-hcl
-Modify your existing ALB listener and add HTTPS listener:
-
-# Modify your existing ALB listener to handle HTTP to HTTPS redirect
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.archesys-web-app-lb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-}
-
-# Add new HTTPS listener
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.archesys-web-app-lb.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  certificate_arn   = aws_acm_certificate.app_cert.arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.archesys-web-app-tg.arn
-  }
-}
-
-Copy
-
-Insert at cursor
-hcl
-Update the ALB security group to allow HTTPS traffic:
-
-resource "aws_security_group" "archesys-web-alb-sg" {
-    name   = "archesys-web-alb-sg"
-    vpc_id = aws_vpc.archesys-web-app-vpc.id
-
-    ingress {
-        from_port   = 443
-        to_port     = 443
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-        description = "HTTPS traffic"
-    }
-
-    ingress {
-        from_port   = 80
-        to_port     = 80
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-        description = "HTTP traffic for redirect"
-    }
-
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-}
-
-Copy
-
-Insert at cursor
-hcl
-Add required variables:
-
-variable "domain_name" {
-  description = "Domain name for SSL certificate"
-  type        = string
-}
-
-variable "ssl_policy" {
-  description = "SSL policy for HTTPS listener"
-  type        = string
-  default     = "ELBSecurityPolicy-TLS-1-2-2017-01"
-}
-
-Copy
-
-Insert at cursor
-hcl
-Optional: Add DNS records if using Route 53:
-
-resource "aws_route53_record" "app_dns" {
-  zone_id = var.hosted_zone_id  # Add this variable
-  name    = var.domain_name
-  type    = "A"
-
-  alias {
-    name                   = aws_lb.archesys-web-app-lb.dns_name
-    zone_id               = aws_lb.archesys-web-app-lb.zone_id
-    evaluate_target_health = true
-  }
-}
-
-Copy
-
-Insert at cursor
-hcl
-Update the target group health check settings:
-
-resource "aws_lb_target_group" "archesys-web-app-tg" {
-    # ... existing configuration ...
-
-    health_check {
-        healthy_threshold   = "3"
-        interval            = "30"
-        protocol            = "HTTP"  # Keep as HTTP since SSL terminates at ALB
-        matcher             = "200"
-        timeout             = "5"
-        path                = "/"
-        unhealthy_threshold = "2"
-        port               = "traffic-port"
-    }
-}
+2. Scaling the ECS service:
+```hcl
+ecs_desired_task_count = 5
 ```
 
-### How to add ssl termination to this
+### Troubleshooting
+1. SSL Certificate Validation Issues
+   - Error: `Error creating ACM certificate: ValidationException`
+   - Solution: Ensure domain ownership and DNS propagation
+   ```bash
+   aws acm describe-certificate --certificate-arn <certificate-arn>
+   ```
 
+2. ECS Task Definition Failures
+   - Check CloudWatch logs:
+   ```bash
+   aws logs get-log-events --log-group-name /ecs/archesys-web-app --log-stream-name <stream-name>
+   ```
+
+## Data Flow
+The infrastructure implements a three-tier architecture with secure data flow between components.
+
+```ascii
+Internet --> ALB (HTTPS) --> ECS Tasks --> RDS Cluster
+    ^                           |
+    |                          v
+CloudWatch Monitoring <---- CloudWatch Logs
 ```
 
-```
+Key component interactions:
+1. Client requests are terminated at ALB with SSL/TLS
+2. ALB routes traffic to ECS tasks in private subnets
+3. ECS tasks communicate with RDS through security groups
+4. CloudWatch collects metrics and logs from all components
+5. NAT Gateway enables outbound internet access for private resources
 
+## Infrastructure
 
+![Infrastructure diagram](./docs/infra.svg)
+### VPC Resources
+- VPC: `aws_vpc.archesys-web-app-vpc`
+- Subnets: Public, Private, and Database subnets across 3 AZs
+- Internet Gateway and NAT Gateway for connectivity
 
----
+### Compute Resources
+- ECS Cluster: `aws_ecs_cluster.ecs_cluster`
+- ECS Service: Running containerized applications
+- Task Definition: 512 CPU units, 1024MB memory
 
-## Results
+### Database Resources
+- RDS Cluster: MySQL-compatible Aurora cluster
+- Instance Class: db.m5d.large
+- Storage: 100GB GP3
 
-| TBD                        | TBD                             |
-| --------------------------- | --------------------------------------- |
-| `TBD`           | TBD                 |
-| `TBD`            | TBD                 |
+### Load Balancer
+- Application Load Balancer with HTTP to HTTPS redirect
+- SSL/TLS termination with ACM certificate
+- Health checks configured for target group
 
-
----
-
-## Notes
-- **TBD:** TBD
-
----
-
-## Requirements
-
-| Name      | Version |
-| --------- | ------- |
-| Terraform | >= 0.13 |
-| AWS       | >= 4.9  |
-
+### Monitoring
+- CPU and Memory utilization alarms for ECS
+- 5XX error rate monitoring for ALB
+- Database performance metrics
+- Custom CloudWatch dashboards

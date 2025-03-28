@@ -1,4 +1,3 @@
-
 # provider
 
 provider "aws" {
@@ -122,6 +121,7 @@ resource "aws_lb_target_group" "archesys-web-app-tg" {
     }
 }
 
+# amazonq-ignore-next-line
 resource "aws_lb" "archesys-web-app-lb" {
     name        = "archesys-web-app-lb"
     internal           = false
@@ -130,10 +130,28 @@ resource "aws_lb" "archesys-web-app-lb" {
     security_groups = [aws_security_group.archesys-web-alb-sg.id]
 }
 
-resource "aws_lb_listener" "archesys-web-app-lb-listener" {
+resource "aws_lb_listener" "archesys-web-app-lb-listener-http" {
   load_balancer_arn = aws_lb.archesys-web-app-lb.arn
   port              = var.lb_port
   protocol          = var.lb_protocol
+
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+resource "aws_lb_listener" "archesys-web-app-lb-listener-https" {
+  count             = var.enable_https ? 1 : 0
+  load_balancer_arn = aws_lb.archesys-web-app-lb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = var.certificate_arn
 
   default_action {
     target_group_arn = aws_lb_target_group.archesys-web-app-tg.arn
@@ -170,7 +188,16 @@ resource "aws_security_group" "archesys-web-alb-sg" {
         protocol    = 6
         self        = "false"
         cidr_blocks = ["0.0.0.0/0"]
-        description = "any"
+        description = "HTTP"
+    }
+
+    ingress {
+        from_port   = 443
+        to_port     = 443
+        protocol    = 6
+        self        = "false"
+        cidr_blocks = ["0.0.0.0/0"]
+        description = "HTTPS"
     }
 
     egress {
@@ -202,6 +229,11 @@ resource "aws_security_group" "archesys-web-db-sg" {
 
 resource "aws_ecs_cluster" "ecs_cluster" {
     name = "archesys-web-cluster"
+
+    setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
     
 }
 
@@ -264,6 +296,7 @@ resource "aws_db_subnet_group" "archesys-db-subnets" {
   subnet_ids = aws_subnet.db_subnets.*.id
 }
 
+# amazonq-ignore-next-line
 resource "aws_rds_cluster" "archesys-web-app-db" {
     cluster_identifier        = "archesys-web-app-db"
     vpc_security_group_ids    = [aws_security_group.archesys-web-db-sg.id]

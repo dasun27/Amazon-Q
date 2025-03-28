@@ -1,0 +1,66 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "archesys-web-app-vpc" [ label = "archesys-web-app-vpc
+(AWS::EC2::VPC)", shape =rectangle ];
+  "public_subnets" [ label = "public_subnets
+(AWS::EC2::Subnet)", shape =rectangle ];
+  "private_subnets" [ label = "private_subnets
+(AWS::EC2::Subnet)", shape =rectangle ];
+  "db_subnets" [ label = "db_subnets
+(AWS::EC2::Subnet)", shape =rectangle ];
+  "igw" [ label = "igw
+(AWS::EC2::InternetGateway)", shape =rectangle ];
+  "nat_gateway" [ label = "nat_gateway
+(AWS::EC2::NatGateway)", shape =rectangle ];
+  "archesys-web-app-lb" [ label = "archesys-web-app-lb
+(AWS::ElasticLoadBalancingV2::LoadBalancer)", shape =rectangle, fillcolor = "#E78F81" ];
+  "archesys-web-app-tg" [ label = "archesys-web-app-tg
+(AWS::ElasticLoadBalancingV2::TargetGroup)", shape =rectangle, fillcolor = "#E78F81" ];
+  "archesys-web-app-sg" [ label = "archesys-web-app-sg
+(AWS::EC2::SecurityGroup)", shape =rectangle ];
+  "archesys-web-alb-sg" [ label = "archesys-web-alb-sg
+(AWS::EC2::SecurityGroup)", shape =rectangle ];
+  "archesys-web-db-sg" [ label = "archesys-web-db-sg
+(AWS::EC2::SecurityGroup)", shape =rectangle ];
+  "ecs_cluster" [ label = "ecs_cluster
+(AWS::ECS::Cluster)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "ecs_task_definition" [ label = "ecs_task_definition
+(AWS::ECS::TaskDefinition)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "ecs_service" [ label = "ecs_service
+(AWS::ECS::Service)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "archesys-db-subnets" [ label = "archesys-db-subnets
+(AWS::RDS::DBSubnetGroup)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "archesys-web-app-db" [ label = "archesys-web-app-db
+(AWS::RDS::DBCluster)", shape =cylinder, fillcolor = "#FFCFB3" ];
+  "cert" [ label = "cert
+(AWS::CertificateManager::Certificate)", shape =rectangle ];
+  "http_listener" [ label = "http_listener
+(AWS::ElasticLoadBalancingV2::Listener)", shape =rectangle, fillcolor = "#E78F81" ];
+  "https_listener" [ label = "https_listener
+(AWS::ElasticLoadBalancingV2::Listener)", shape =rectangle, fillcolor = "#E78F81" ];
+  "public_subnets" -> "archesys-web-app-vpc";
+  "private_subnets" -> "archesys-web-app-vpc";
+  "db_subnets" -> "archesys-web-app-vpc";
+  "igw" -> "archesys-web-app-vpc";
+  "nat_gateway" -> "public_subnets";
+  "archesys-web-app-lb" -> "public_subnets";
+  "archesys-web-app-lb" -> "archesys-web-alb-sg";
+  "archesys-web-app-tg" -> "archesys-web-app-vpc";
+  "archesys-web-app-sg" -> "archesys-web-app-vpc";
+  "archesys-web-app-sg" -> "archesys-web-alb-sg";
+  "archesys-web-alb-sg" -> "archesys-web-app-vpc";
+  "archesys-web-db-sg" -> "archesys-web-app-vpc";
+  "archesys-web-db-sg" -> "archesys-web-app-sg";
+  "ecs_service" -> "ecs_cluster";
+  "ecs_service" -> "ecs_task_definition";
+  "ecs_service" -> "private_subnets";
+  "ecs_service" -> "archesys-web-app-sg";
+  "ecs_service" -> "archesys-web-app-tg";
+  "archesys-db-subnets" -> "db_subnets";
+  "archesys-web-app-db" -> "archesys-web-db-sg";
+  "archesys-web-app-db" -> "archesys-db-subnets";
+  "http_listener" -> "archesys-web-app-lb";
+  "https_listener" -> "archesys-web-app-lb";
+  "https_listener" -> "cert";
+  "https_listener" -> "archesys-web-app-tg";
+}

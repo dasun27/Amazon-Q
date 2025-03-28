@@ -1,4 +1,3 @@
-
 variable "aws_session_token" {
   description = "aws session token"
   default     = ""
@@ -87,4 +86,47 @@ variable "db_password" {
   description = "password for the database"
   default     = ""
   type        = string
+}
+
+# CloudWatch Monitoring Variables
+variable "enable_monitoring" {
+  description = "Enable CloudWatch monitoring and alarms"
+  default     = true
+  type        = bool
+}
+
+variable "cpu_utilization_threshold" {
+  description = "The maximum percentage of CPU utilization"
+  default     = 80
+  type        = number
+}
+
+variable "memory_utilization_threshold" {
+  description = "The maximum percentage of memory utilization"
+  default     = 80
+  type        = number
+}
+
+variable "alarm_evaluation_periods" {
+  description = "The number of periods over which data is compared to the specified threshold"
+  default     = 2
+  type        = number
+}
+
+variable "alarm_period" {
+  description = "The period in seconds over which the specified statistic is applied"
+  default     = 300
+  type        = number
+}
+
+# SSL/TLS Variables
+variable "domain_name" {
+  description = "The domain name for the application (e.g., example.com)"
+  type        = string
+}
+
+variable "create_dns_zone" {
+  description = "Whether to create a new Route53 zone or use an existing one"
+  type        = bool
+  default     = false
 }
