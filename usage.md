@@ -137,10 +137,7 @@ resource "aws_route_table" "pub_rt" {
     }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Public subnets have a route table that directs internet-bound traffic (0.0.0.0/0) to the Internet Gateway
 
 The Application Load Balancer sits in public subnets and can receive traffic directly from the internet
@@ -158,10 +155,7 @@ resource "aws_route_table" "pri_rt" {
     }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Private subnets route their internet-bound traffic through the NAT Gateway
 
 The NAT Gateway is placed in the public subnet (specifically public_subnets0)
@@ -176,10 +170,7 @@ resource "aws_route_table" "db_rt" {
     vpc_id = aws_vpc.archesys-web-app-vpc.id
 }
 
-Copy
 
-Insert at cursor
-hcl
 Database subnets have no route to the internet
 
 They can only communicate within the VPC through the security group rules
@@ -233,10 +224,7 @@ resource "aws_flow_log" "vpc_flow_log" {
     log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
 }
 
-Copy
 
-Insert at cursor
-hcl
 Improved Security Group Rules:
 
 locals {
@@ -284,10 +272,7 @@ locals {
     }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Enhanced RDS Configuration:
 
 resource "aws_rds_cluster" "main" {
@@ -334,10 +319,7 @@ resource "aws_kms_key" "rds" {
     })
 }
 
-Copy
 
-Insert at cursor
-hcl
 Secure ECS Task Definition:
 
 resource "aws_ecs_task_definition" "app" {
@@ -381,10 +363,7 @@ resource "aws_ecs_task_definition" "app" {
     ])
 }
 
-Copy
 
-Insert at cursor
-hcl
 WAF Integration for ALB:
 
 resource "aws_wafv2_web_acl" "main" {
@@ -424,10 +403,7 @@ resource "aws_wafv2_web_acl_association" "main" {
     web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
 
-Copy
 
-Insert at cursor
-hcl
 SSL/TLS Configuration for ALB:
 
 resource "aws_lb_listener" "https" {
@@ -469,10 +445,7 @@ resource "aws_acm_certificate_validation" "cert_validation" {
   certificate_arn = aws_acm_certificate.app_cert.arn
 }
 
-Copy
 
-Insert at cursor
-hcl
 Modify your existing ALB listener and add HTTPS listener:
 
 # Modify your existing ALB listener to handle HTTP to HTTPS redirect
@@ -505,10 +478,7 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Update the ALB security group to allow HTTPS traffic:
 
 resource "aws_security_group" "archesys-web-alb-sg" {
@@ -539,10 +509,7 @@ resource "aws_security_group" "archesys-web-alb-sg" {
     }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Add required variables:
 
 variable "domain_name" {
@@ -556,10 +523,7 @@ variable "ssl_policy" {
   default     = "ELBSecurityPolicy-TLS-1-2-2017-01"
 }
 
-Copy
 
-Insert at cursor
-hcl
 Optional: Add DNS records if using Route 53:
 
 resource "aws_route53_record" "app_dns" {
@@ -574,10 +538,7 @@ resource "aws_route53_record" "app_dns" {
   }
 }
 
-Copy
 
-Insert at cursor
-hcl
 Update the target group health check settings:
 
 resource "aws_lb_target_group" "archesys-web-app-tg" {
